@@ -1,5 +1,4 @@
 import requests
-from bs4 import BeautifulSoup
 
 # Tavily API configurations
 TAVILY_API_URL = "https://api.tavily.com/search"
@@ -18,40 +17,16 @@ def search_web(query, max_results=1):
     }
 
     response = requests.post(TAVILY_API_URL, json=payload)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": f"Error: {response.status_code} - {response.json().get('message', 'Unknown error')}"}
-
-
-def extract_content(url):
-    """
-    Extracts main content from a web page using BeautifulSoup.
-    """
+    
     try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, "html.parser")
-            paragraphs = soup.find_all("p")  # Extract paragraphs
-            content = "\n".join(p.text for p in paragraphs if p.text.strip())
-            return content
-        else:
-            return f"Failed to extract content. HTTP Status: {response.status_code}"
-    except Exception as e:
-        return f"Error occurred while scraping: {e}"
-
-
-def format_itinerary(content, query):
-    """
-    Formats the raw content into a structured response.
-    """
-    # Basic formatting for readability
-    itinerary = f"For your query '{query}', here's the extracted information:\n\n"
-    paragraphs = content.split("\n")
-    for idx, para in enumerate(paragraphs[:5], start=1):  # Include the first 5 paragraphs
-        itinerary += f"- **Day {idx}**: {para.strip()}\n"
-    itinerary += "\nFor more details, check the source link provided."
-    return itinerary
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        return response.json()  # Attempt to parse the response as JSON
+    except requests.exceptions.HTTPError as http_err:
+        return {"error": f"HTTP error occurred: {http_err} - {response.text}"}
+    except requests.exceptions.RequestException as req_err:
+        return {"error": f"Request error occurred: {req_err}"}
+    except ValueError:
+        return {"error": f"Failed to parse JSON. Response content: {response.text}"}
 
 
 def generate_response(query):
@@ -68,17 +43,6 @@ def generate_response(query):
         first_result = search_results["results"][0]
         url = first_result.get("url")
         title = first_result.get("title")
-        extracted_content = extract_content(url)
-
-        # Step 3: Format the response
-        if extracted_content:
-            formatted_response = format_itinerary(extracted_content, query)
-            return f"**{title}**\n\n{formatted_response}"
-        else:
-            return "Failed to extract content from the webpage."
-    else:
-        return "No relevant results found for the query."
-
 
 # Example Usage
 if __name__ == "__main__":
