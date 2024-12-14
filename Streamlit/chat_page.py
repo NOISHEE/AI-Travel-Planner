@@ -69,6 +69,8 @@ def chat():
             st.info("💡 **Generating your personalized travel itinerary...**")
             response_payload = {"query": query, "top_k": 5, "threshold": 0.75}
             itinerary_response = call_fastapi_endpoint("/generate-openai-response", response_payload)
+            st.session_state.itinerary_response = itinerary_response["response"]
+
 
             if itinerary_response and "response" in itinerary_response:
                 st.markdown(itinerary_response["response"])
@@ -122,6 +124,14 @@ def chat():
                         )
                 except Exception as e:
                     st.error(f"⚠️ Failed to generate the PDF. Error: {e}")
+
+    # Add navigation button to Budget Planner
+    if st.button("Go to Budget Planner"):
+        if "itinerary_response" in st.session_state and st.session_state.itinerary_response:
+            st.session_state.page = "Budget Planner"  # Set the target page
+            st.rerun()  # Force re-run to apply navigation
+        else:
+            st.warning("⚠️ Please generate a travel itinerary first before accessing the Budget Planner.")
 
 if __name__ == "__main__":
     chat()
