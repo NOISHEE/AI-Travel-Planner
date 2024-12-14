@@ -3,7 +3,6 @@ import requests
 from fpdf import FPDF
 from dotenv import load_dotenv
 import os
-import BytesIO
 
 # Load environment variables
 load_dotenv()
