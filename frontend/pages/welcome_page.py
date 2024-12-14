@@ -2,7 +2,7 @@ import streamlit as st
 
 def welcome_page():
     # Set a local image path
-    image_path = "/Users/nishitamatlani/Documents/ADS/Final Project/Streamlit/welcome.png"
+    image_path = "welcome.png"
 
     # Render the welcome page content with st.image
     st.markdown(
@@ -15,5 +15,5 @@ def welcome_page():
         unsafe_allow_html=True,
     )
     # Use st.image to display the local image
-    st.image(image_path, caption="Welcome Banner", use_column_width=True)
+    st.image(image_path, caption="Welcome Banner", use_container_width=True)
 

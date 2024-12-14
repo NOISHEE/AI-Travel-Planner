@@ -1,7 +1,11 @@
 import streamlit as st
 import requests
+from dotenv import load_dotenv
+import os
 
-FASTAPI_URL = "http://127.0.0.1:8000"  # Replace with your FastAPI server URL
+load_dotenv()
+
+FASTAPI_URL =os.getenv("FASTAPI_URL")
 
 def login():
     st.title("🔑 Login")

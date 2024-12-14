@@ -1,8 +1,8 @@
 import streamlit as st
-from welcome_page import welcome_page
-from signup_page import sign_up
-from login_page import login
-from chat_page import chat
+from pages.welcome_page import welcome_page
+from pages.signup_page import sign_up
+from pages.login_page import login
+from pages.chat_page import chat
 
 # Set the page configuration ONCE at the top of app.py
 st.set_page_config(page_title="AI Planner", page_icon="🤖", layout="wide")
@@ -43,7 +43,6 @@ if st.session_state.page == "Welcome":
 elif st.session_state.page == "Sign Up":
     sign_up()
 elif st.session_state.page == "Login":
-    print("Inside Login")
     login()
 elif st.session_state.page == "Chat":
     chat()
