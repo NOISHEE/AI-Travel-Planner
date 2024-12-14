@@ -7,8 +7,10 @@ from fastapi import Form
 from websearch_normal import search_web, generate_response
 from youtube_search import search_youtube
 from openai_response import is_travel_related_gpt, fetch_and_generate_response, generate_response_with_relevant_data
-
-
+from typing import Optional
+import json
+from openai import OpenAI
+import pandas as pd
 
 # FastAPI app
 app = FastAPI()
@@ -16,13 +18,16 @@ app = FastAPI()
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_API_KEY)
+
 # Snowflake connection details (update with your credentials)
-SNOWFLAKE_USER = "vicksInhaler"
-SNOWFLAKE_PASSWORD = "vicksInhaler@123"
-SNOWFLAKE_ACCOUNT = "vt67315.us-east-2.aws"
-SNOWFLAKE_DATABASE = "ADS_TRAVEL"
-SNOWFLAKE_SCHEMA = "PUBLIC"
-SNOWFLAKE_WAREHOUSE = "COMPUTE_WH"
+SNOWFLAKE_USER = os.getenv("SNOWFLAKE_USER")
+SNOWFLAKE_PASSWORD = os.getenv("SNOWFLAKE_PASSWORD")
+SNOWFLAKE_ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT")
+SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE")
+SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA")
+SNOWFLAKE_WAREHOUSE = os.getenv("SNOWFLAKE_WAREHOUSE")
 
 def get_snowflake_connection():
     return snowflake.connector.connect(
@@ -41,6 +46,10 @@ class SignupModel(BaseModel):
 class LoginModel(BaseModel):
     username: str
     password: str
+
+class BudgetRequest(BaseModel):
+    itinerary: str
+    modification_query: Optional[str] = None  # Accepts `None` for modification_query   
 
 def hash_password(password: str):
     return pwd_context.hash(password)
@@ -191,3 +200,75 @@ async def generate_openai_response(request: GenerateResponseRequest):
         logging.error(f"Internal Server Error: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred while processing your request.")
 
+@app.post("/generate-budget")
+def generate_budget(request: BudgetRequest):
+    """
+    Generate or modify a budget using LLM.
+    """
+    try:
+        system_prompt = (
+            "You are a highly skilled assistant specializing in creating structured and actionable travel budgets that inspire users to plan and manage their trips effectively. "
+            "Your budgets should balance precision and realism, providing clear and engaging breakdowns that reflect accurate, region-specific costs. "
+            "Descriptions should be practical yet approachable, with relatable examples demonstrating how the costs align with real-world scenarios. "
+            "Each budget plan should include:\n"
+            "- A concise and compelling title summarizing the budget's purpose.\n"
+            "- A motivational and clear objective explaining what the budget achieves for the user, written in an approachable and inspiring manner.\n"
+            "- Key cost categories broken into digestible and intuitive segments to simplify budget management.\n"
+            "- A detailed breakdown of costs for each category with insightful descriptions that explain the relevance and practicality of these expenses. Use relatable examples to showcase real-world applications.\n"
+            "- A structured and measurable expected total to give users a comprehensive understanding of the trip’s financial requirements.\n"
+            "If updating an existing budget, carefully refine the relevant sections based on the user's query while preserving the overall structure and coherence of the plan. "
+            "Strictly return a valid JSON output only. Do not include any introductory text, explanations, or comments. The response should consist solely of the JSON structure in this format:\n"
+            "{\n"
+            '  "Title": "Budget for a 5-Day Paris Trip",\n'
+            '  "Objective": "A clear and concise plan to help you manage expenses effectively for a 5-day trip to Paris.",\n'
+            '  "KeyCategories": ["Accommodation", "Food", "Transportation", "Activities", "Miscellaneous"],\n'
+            '  "Breakdown": [\n'
+            '    {"Category": "Accommodation", "Item": "Hotel Stay (5 Nights)", "Cost": 500},\n'
+            '    {"Category": "Food", "Item": "Daily Meals", "Cost": 150},\n'
+            '    {"Category": "Transportation", "Item": "Flights", "Cost": 300},\n'
+            '    {"Category": "Transportation", "Item": "Local Transport", "Cost": 50},\n'
+            '    {"Category": "Activities", "Item": "Museum Tickets", "Cost": 40},\n'
+            '    {"Category": "Activities", "Item": "Guided Tours", "Cost": 100},\n'
+            '    {"Category": "Miscellaneous", "Item": "Souvenirs", "Cost": 50}\n'
+            "  ],\n"
+            '  "ExpectedTotal": 1190\n'
+            "}\n"
+            "Focus on providing content that is practical, accurate, and relatable while ensuring the JSON structure is complete, valid, and error-free. Tailor each budget to the user's itinerary to make the financial planning journey personal and impactful. Ensure that the output contains only the JSON and nothing else."
+        )
+
+        # Prepare the messages payload
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Itinerary: {request.itinerary}"},
+        ]
+        if request.modification_query:
+            messages.append({"role": "user", "content": f"Modification: {request.modification_query}"})
+
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+        )
+
+        # Extract response content
+        raw_output = response.choices[0].message.content
+        print("Raw OpenAI Output:", raw_output)
+
+        # Validate JSON output
+        budget_data = json.loads(raw_output)
+        return {"budget": budget_data}
+
+    except json.JSONDecodeError as e:
+        print("JSON Decode Error:", str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="LLM returned invalid JSON. Please refine your input or contact support.",
+        )
+    except Exception as e:
+        print("Unhandled Exception:", str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate budget: {str(e)}",
+        )
