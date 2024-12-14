@@ -3,7 +3,6 @@ import requests
 from fpdf import FPDF
 from dotenv import load_dotenv
 import os
-
 # Load environment variables
 load_dotenv()
 
@@ -22,32 +21,38 @@ def call_fastapi_endpoint(endpoint, payload):
 
 def create_pdf_with_unicode(content):
     """
-    Generate a well-formatted PDF with Unicode support using Noto Sans font.
+    Generate a PDF with Unicode support using a TrueType font.
     """
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
+    try:
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
 
-    # Add the custom Unicode font (ensure the path to the font file is correct)
-    pdf.add_font('NotoSans', '', 'noto-sans-v27-latin-regular.ttf', uni=True)
+        # Add a TrueType font for Unicode support
+        font_path = "noto-sans-v27-latin-regular.ttf"  # Update with the correct font path
+        if not os.path.exists(font_path):
+            raise FileNotFoundError(f"Font file '{font_path}' not found. Please ensure it exists.")
 
-    # Add title to the PDF
-    pdf.set_font('NotoSans', size=16)  # Set the custom font for title
-    pdf.cell(0, 10, "Your Travel Itinerary", ln=True, align="C")
-    pdf.ln(10)  # Add a line break
+        pdf.add_font("NotoSans", style="", fname=font_path, uni=True)
+        pdf.set_font("NotoSans", size=16)
+        pdf.cell(0, 10, "Your Travel Itinerary", ln=True, align="C")
+        pdf.ln(10)  # Add a line break
 
-    # Add the OpenAI-generated response
-    pdf.set_font('NotoSans', size=12)  # Set the custom font for content
-    paragraphs = content.split("\n\n")
-    for paragraph in paragraphs:
-        pdf.multi_cell(0, 10, paragraph)
-        pdf.ln(5)  # Add spacing between paragraphs
+        # Add the content
+        pdf.set_font("NotoSans", size=12)
+        paragraphs = content.split("\n\n")
+        for paragraph in paragraphs:
+            pdf.multi_cell(0, 10, paragraph)
+            pdf.ln(5)  # Add spacing between paragraphs
 
-    # Save the PDF to an in-memory BytesIO object
-    pdf_stream = BytesIO()
-    pdf.output(pdf_stream, dest='F')
-    pdf_stream.seek(0)  # Rewind the stream to the beginning
-    return pdf_stream
+        # Save the PDF to a file
+        pdf_file = "travel_itinerary.pdf"
+        pdf.output(pdf_file)
+        return pdf_file
+    except Exception as e:
+        raise RuntimeError(f"Failed to create PDF: {e}")
+
+
 
 # Main Streamlit App
 def chat():
@@ -72,13 +77,13 @@ def chat():
 
             # Step 2: Fetch web search results
             st.info("🔍 **Fetching additional web suggestions...**")
-            search_payload = {"query": f"Create a detailed travel itinerary: {query}", "max_results": 3}
+            search_payload = {"query": f"Create a detailed travel itinerary: {query}", "max_results": 1}
             search_results = call_fastapi_endpoint("/search", search_payload)
 
             if search_results and "results" in search_results:
-                st.markdown("### Related Web Search Results:")
+                st.markdown("### Here is more information if you would like to read more and explore more about the places:")
                 for idx, item in enumerate(search_results["results"], start=1):
-                    st.write(f"**{idx}.** {item.get('title', 'No Title')}")
+                    st.write(f"{item.get('title', 'No Title')}")
                     st.write(f"📍 Description: {item.get('content', 'No description available.')}")
                     st.write(f"🌐 **Learn More:** [Link]({item.get('url', '#')})")
                     st.markdown("---")
@@ -87,34 +92,34 @@ def chat():
 
             # Step 3: Fetch related YouTube videos
             st.info("🎥 **Fetching related YouTube videos...**")
-            youtube_payload = {"query": f"Best travel vlogs for {query}", "max_results": 3}
+            youtube_payload = {"query": f"Best travel vlogs for {query}", "max_results": 1}
             youtube_results = call_fastapi_endpoint("/youtube-search", youtube_payload)
 
             if youtube_results and "results" in youtube_results and len(youtube_results["results"]) > 0:
-                st.markdown("### 🎥 Related YouTube Videos:")
+                st.markdown("### 🎥 watch thease youtube videos and see what places you find good:")
                 for idx, video in enumerate(youtube_results["results"], start=1):
-                    st.write(f"**{idx}.** {video.get('title', 'No Title')}")
+                    st.write(f"{video.get('title', 'No Title')}")
                     st.video(video.get("url", "#"))
                     st.markdown("---")
             else:
                 st.warning("🔍 No related YouTube video found for your itinerary.")
 
-                # Step 4: PDF Download Button
             # Step 4: PDF Download Button
             if itinerary_response and "response" in itinerary_response:
-                st.info("💾 **Download Your Itinerary as a PDF**")
+                st.info("💾 **Download Your Itinerary as a PDF and save the itenary. Happy Travels!!!**")
 
-                # Generate the PDF in-memory
                 try:
+                    # Generate the PDF file
                     pdf_file = create_pdf_with_unicode(itinerary_response["response"])
 
-                    # Provide the download button
-                    st.download_button(
-                        label="📥 Download PDF",
-                        data=pdf_file,
-                        file_name="travel_itinerary.pdf",
-                        mime="application/pdf"
-                    )
+                    # Allow the user to download the generated PDF
+                    with open(pdf_file, "rb") as file:
+                        st.download_button(
+                            label="📥 Download PDF",
+                            data=file,
+                            file_name="travel_itinerary.pdf",
+                            mime="application/pdf"
+                        )
                 except Exception as e:
                     st.error(f"⚠️ Failed to generate the PDF. Error: {e}")
 
