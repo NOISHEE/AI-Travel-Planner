@@ -5,6 +5,7 @@ from login_page import login
 from chat_page import chat
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 
 FASTAPI_URL = os.getenv("FASTAPI_URL")
@@ -42,13 +43,20 @@ elif selected_page.startswith("💬"):
     else:
         st.session_state.page = "Chat"
 
+# Add Logout button if the user is logged in
+if st.session_state.logged_in:
+    st.sidebar.markdown("---")  # Add a separator
+    if st.sidebar.button("🔓 Logout"):
+        st.session_state.logged_in = False
+        st.session_state.page = "Welcome"
+        st.sidebar.success("You have been logged out successfully.")
+
 # Page routing logic
 if st.session_state.page == "Welcome":
     welcome_page()
 elif st.session_state.page == "Sign Up":
     sign_up()
 elif st.session_state.page == "Login":
-    print("Inside Login")
     login()
 elif st.session_state.page == "Chat":
     chat()
