@@ -64,6 +64,7 @@ docker-compose.yml                # Docker Compose file for orchestrating servic
 ---
 
 ## Architecture Diagram
+![Airflow ETL and Data Flow Architecture](./images_ai/archdiag.png)
 
 
 ---
