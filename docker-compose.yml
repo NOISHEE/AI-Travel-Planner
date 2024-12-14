@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: ./fast_api
-    image: my-backend-image
+    image: vicksinhaler/my-backend-image:latest
     container_name: backend-container
     ports:
       - "8000:8000"
@@ -39,7 +39,7 @@ services:
   frontend:
     build:
       context: ./Streamlit
-    image: my-frontend-image
+    image: vicksinhaler/my-frontend-image:latest
     container_name: frontend-container
     ports:
       - "8501:8501"
@@ -47,7 +47,7 @@ services:
       - my-network
     environment:
       # Frontend Configuration
-      DEPLOY_URL: ${DEPLOY_URL}  # Corrected FastAPI URL
+      FASTAPI_URL: ${FASTAPI_URL}  # Corrected FastAPI URL
  
 networks:
   my-network:
