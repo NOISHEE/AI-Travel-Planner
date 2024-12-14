@@ -191,5 +191,3 @@ async def generate_openai_response(request: GenerateResponseRequest):
         logging.error(f"Internal Server Error: {e}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred while processing your request.")
 
-
-
