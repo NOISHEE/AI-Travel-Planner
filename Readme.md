@@ -2,8 +2,9 @@
 
 **WanderWise** is an intelligent travel planning tool that integrates AI, real-time web search, and YouTube video data to provide users with highly personalized travel recommendations. Users can create, modify, and download detailed itineraries with ease through a conversational chatbot interface.
 
-Deployed Application - http://13.59.247.191:8501/
-Deployed FastAPI (Backend) - http://13.59.247.191:8000/docs
+1. Deployed Application - http://13.59.247.191:8501/
+2. Deployed FastAPI (Backend) - http://13.59.247.191:8000/docs
+3. youtube video link: https://youtu.be/xKh24o73VIQ
 
 ---
 
