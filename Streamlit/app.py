@@ -3,6 +3,7 @@ from welcome_page import welcome_page
 from signup_page import sign_up
 from login_page import login
 from chat_page import chat
+from budget import budget_page
 from dotenv import load_dotenv
 import os
 
@@ -22,11 +23,10 @@ if "users" not in st.session_state:
     st.session_state.users = {}
 
 # Sidebar navigation
-st.sidebar.title("🚀 Navigation")
 selected_page = st.sidebar.radio(
     "Go to:",
-    ["🏠 Welcome", "🔑 Login", "📝 Sign Up", "💬 Chat"],
-    index=["Welcome", "Login", "Sign Up", "Chat"].index(st.session_state.page)
+    ["🏠 Welcome", "🔑 Login", "📝 Sign Up", "💬 Chat", "💰 Budget Planner"],
+    index=["Welcome", "Login", "Sign Up", "Chat", "Budget Planner"].index(st.session_state.page)
 )
 
 # Update the current page based on sidebar selection
@@ -42,6 +42,15 @@ elif selected_page.startswith("💬"):
         st.session_state.page = "Login"
     else:
         st.session_state.page = "Chat"
+elif selected_page.startswith("💰"):
+    if not st.session_state.logged_in:
+        st.sidebar.warning("🔒 Please log in to access the Budget Planner.")
+        st.session_state.page = "Login"
+    elif not st.session_state.itinerary_response:
+        st.sidebar.warning("⚠️ Generate an itinerary in Chat before creating a budget.")
+        st.session_state.page = "Chat"
+    else:
+        st.session_state.page = "Budget Planner"
 
 # Add Logout button if the user is logged in
 if st.session_state.logged_in:
@@ -60,3 +69,5 @@ elif st.session_state.page == "Login":
     login()
 elif st.session_state.page == "Chat":
     chat()
+elif st.session_state.page == "Budget Planner":
+    budget_page(st.session_state.itinerary_response)
