@@ -2,6 +2,9 @@
 
 **WanderWise** is an intelligent travel planning tool that integrates AI, real-time web search, and YouTube video data to provide users with highly personalized travel recommendations. Users can create, modify, and download detailed itineraries with ease through a conversational chatbot interface.
 
+Deployed Application - http://13.59.247.191:8501/
+Deployed FastAPI (Backend) - http://13.59.247.191:8000/docs
+
 ---
 
 ## Key Features
@@ -17,7 +20,8 @@
   - Built with **Streamlit** (Frontend) and **FastAPI** (Backend).
 - **Downloadable Itineraries**:
   - Users can export travel plans as PDFs.
-
+- **Persionalised Budget**:
+  - Users can create personalized budgets based on their plans.
 ---
 
 ## Tools and Technologies
@@ -42,6 +46,7 @@ Streamlit/
     login_page.py                 # User login functionality
     signup_page.py                # User signup functionality
     welcome_page.py               # Welcome page for the app
+    budget.py                     # Personalised budget creation
     requirements.txt              # Python dependencies for Streamlit
     Dockerfile                    # Docker setup for the Streamlit app
     travel_itinerary.pdf          # Sample exported itinerary
